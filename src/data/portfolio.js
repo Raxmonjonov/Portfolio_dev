@@ -1,11 +1,11 @@
 export const portfolioData = {
   personal: {
-    name: "Azizbek Rahimov", // Bu yerga o'z ism-familiyangizni yozishingiz mumkin
+    name: "Dilshodbek",
     title: "Full-Stack Software Engineer",
-    subtitle: "Zamonaviy, xavfsiz va yuqori unumdorlikka ega web ilovalar yaratuvchi dasturchi",
-    bio: "Men React, Node.js, Express, Python va bulutli texnologiyalar yordamida scalable (kengayuvchan) va foydalanuvchilar uchun qulay tizimlarni loyihalashga ixtisoslashganman. Har bir loyihada toza kod va chiroyli arxitekturaga e'tibor qarataman.",
-    status: "Yangi loyihalar uchun ochiqman",
-    location: "Toshkent, O'zbekiston",
+    subtitle: "Zamonaviy, xavfsiz va yuqori unumdorlikka ega web ilovalar yaratuvchi Full-Stack dasturchi",
+    bio: "Men React, Node.js, Express, MongoDB/PostgreSQL va bulutli texnologiyalar yordamida kengayuvchan (scalable) va qulay veb tizimlarni loyihalashga ixtisoslashganman. Har bir loyihada toza arxitektura va yuqori tezlikka alohida urg'u beraman.",
+    status: "Yangi loyihalar va ish uchun ochiq",
+    location: "O'zbekiston",
     experienceYears: "2+",
     projectsCount: "15+",
     happyClients: "20+",
@@ -14,7 +14,7 @@ export const portfolioData = {
     github: "https://github.com",
     linkedin: "https://linkedin.com",
     telegram: "https://t.me",
-    email: "contact@example.com"
+    email: "dilshodbek@example.com"
   },
   skills: {
     frontend: [
