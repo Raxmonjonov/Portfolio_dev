@@ -11,10 +11,10 @@ export const portfolioData = {
     happyClients: "20+",
   },
   socials: {
-    github: "https://github.com",
+    github: "https://github.com/Raxmonjonov",
     linkedin: "https://linkedin.com",
-    telegram: "https://t.me",
-    email: "dilshodbek@example.com"
+    telegram: "https://t.me/raxmonjonov_dev",
+    email: "raxmonjonov.dev@gmail.com"
   },
   skills: {
     frontend: [

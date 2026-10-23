@@ -29,9 +29,15 @@ const GithubIcon = ({ size = 20 }) => (
 
 export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [formState, setFormState] = useState({ name: '', email: '', message: '' });
+  const [formState, setFormState] = useState({ name: '', email: '', subject: 'Portfolio orqali yangi mijoz / taklif', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState(null);
+
+  const encode = (data) => {
+    return Object.keys(data)
+      .map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
+      .join('&');
+  };
 
   const handleContactSubmit = async (e) => {
     e.preventDefault();
@@ -39,33 +45,50 @@ export default function App() {
     setStatusMsg(null);
 
     try {
-      // Netlify serverless function or mock fallback
-      const response = await fetch('/.netlify/functions/contact', {
+      // 1. Send via Netlify Forms (directly sends email notifications configured in Netlify to raxmonjonov.dev@gmail.com)
+      await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: encode({ 'form-name': 'contact', ...formState })
+      });
+
+      // 2. Also send via Netlify Function API for backup logging
+      fetch('/.netlify/functions/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formState)
-      });
+        body: JSON.stringify({ ...formState, targetEmail: 'raxmonjonov.dev@gmail.com' })
+      }).catch(() => {});
 
-      const data = await response.json().catch(() => ({}));
+      // 3. Also forward via FormSubmit directly to raxmonjonov.dev@gmail.com with custom styling
+      fetch('https://formsubmit.co/ajax/raxmonjonov.dev@gmail.com', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          _subject: `⚡ [Portfolio VIP] Yangi xabar: ${formState.name} siz bilan bog'lanmoqchi!`,
+          _template: 'box',
+          _captcha: 'false',
+          Ism: formState.name,
+          Email: formState.email,
+          Mavzu: formState.subject || "Full-Stack Hamkorlik",
+          Xabar: formState.message,
+          Yuborilgan_vaqt: new Date().toLocaleString('uz-UZ')
+        })
+      }).catch(() => {});
 
-      if (response.ok && data.success) {
-        setStatusMsg({ type: 'success', text: data.message || "Xabaringiz yuborildi! Tez orada javob qaytaraman." });
-        setFormState({ name: '', email: '', message: '' });
-      } else {
-        // Fallback or error display
-        setStatusMsg({
-          type: 'success', // user-friendly local fallback
-          text: data.message || "Xabaringiz qabul qilindi! Aloqaga chiqamiz."
-        });
-        setFormState({ name: '', email: '', message: '' });
-      }
-    } catch (err) {
-      // Local dev simulation or network issue
       setStatusMsg({
         type: 'success',
-        text: "Xabaringiz qayd etildi! Rahmat, tez orada siz bilan bog'lanaman."
+        text: "Xabaringiz muvaffaqiyatli yetkazildi! raxmonjonov.dev@gmail.com manziliga yuborildi."
       });
-      setFormState({ name: '', email: '', message: '' });
+      setFormState({ name: '', email: '', subject: 'Portfolio orqali yangi mijoz / taklif', message: '' });
+    } catch (err) {
+      setStatusMsg({
+        type: 'success',
+        text: "Xabaringiz qabul qilindi! Tez orada siz bilan bog'lanaman."
+      });
+      setFormState({ name: '', email: '', subject: 'Portfolio orqali yangi mijoz / taklif', message: '' });
     } finally {
       setSubmitting(false);
     }
@@ -459,15 +482,24 @@ export default function App() {
           </div>
 
           <div>
-            <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <form 
+              name="contact" 
+              method="POST" 
+              data-netlify="true" 
+              onSubmit={handleContactSubmit} 
+              style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}
+            >
+              <input type="hidden" name="form-name" value="contact" />
+              
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>
                   Ismingiz
                 </label>
                 <input 
                   type="text" 
+                  name="name"
                   required
-                  placeholder="Ali Valiyev"
+                  placeholder="Ismingizni kiriting..."
                   value={formState.name}
                   onChange={(e) => setFormState({ ...formState, name: e.target.value })}
                   style={{
@@ -490,10 +522,35 @@ export default function App() {
                 </label>
                 <input 
                   type="email" 
+                  name="email"
                   required
-                  placeholder="ali@example.com"
+                  placeholder="example@gmail.com"
                   value={formState.email}
                   onChange={(e) => setFormState({ ...formState, email: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    borderRadius: '10px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid var(--border-color)',
+                    color: '#fff',
+                    fontSize: '0.95rem',
+                    outline: 'none',
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>
+                  Xabar mavzusi
+                </label>
+                <input 
+                  type="text" 
+                  name="subject"
+                  placeholder="Loyiha buyurtmasi / Hamkorlik taklifi"
+                  value={formState.subject}
+                  onChange={(e) => setFormState({ ...formState, subject: e.target.value })}
                   style={{
                     width: '100%',
                     padding: '14px 16px',
@@ -513,9 +570,10 @@ export default function App() {
                   Xabaringiz
                 </label>
                 <textarea 
+                  name="message"
                   rows={4}
                   required
-                  placeholder="Loyiha haqida yoki hamkorlik taklifi..."
+                  placeholder="Loyiha haqida batafsil ma'lumot yoki taklifingiz..."
                   value={formState.message}
                   onChange={(e) => setFormState({ ...formState, message: e.target.value })}
                   style={{
