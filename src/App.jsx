@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Code2, 
   Terminal, 
@@ -15,9 +15,11 @@ import {
   Menu, 
   X, 
   Database, 
-  Cpu 
+  Cpu,
+  Globe
 } from 'lucide-react';
 import { portfolioData } from './data/portfolio';
+import { translations } from './data/translations';
 
 // SVG Github icon component
 const GithubIcon = ({ size = 20 }) => (
@@ -28,8 +30,19 @@ const GithubIcon = ({ size = 20 }) => (
 );
 
 export default function App() {
+  const [lang, setLang] = useState(() => {
+    return localStorage.getItem('portfolio_lang') || 'uz';
+  });
+
+  const t = translations[lang] || translations.uz;
+
+  const handleLangChange = (newLang) => {
+    setLang(newLang);
+    localStorage.setItem('portfolio_lang', newLang);
+  };
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [formState, setFormState] = useState({ name: '', email: '', subject: 'Portfolio orqali yangi mijoz / taklif', message: '' });
+  const [formState, setFormState] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState(null);
 
@@ -44,22 +57,24 @@ export default function App() {
     setSubmitting(true);
     setStatusMsg(null);
 
+    const emailSubject = formState.subject || (lang === 'uz' ? 'Portfolio orqali yangi mijoz / taklif' : lang === 'ru' ? 'Новое сообщение из портфолио' : 'New inquiry from Portfolio');
+
     try {
-      // 1. Send via Netlify Forms (directly sends email notifications configured in Netlify to raxmonjonov.dev@gmail.com)
+      // 1. Send via Netlify Forms
       await fetch('/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: encode({ 'form-name': 'contact', ...formState })
+        body: encode({ 'form-name': 'contact', ...formState, subject: emailSubject })
       });
 
-      // 2. Also send via Netlify Function API for backup logging
+      // 2. Netlify Function API
       fetch('/.netlify/functions/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formState, targetEmail: 'raxmonjonov.dev@gmail.com' })
+        body: JSON.stringify({ ...formState, subject: emailSubject, targetEmail: 'raxmonjonov.dev@gmail.com' })
       }).catch(() => {});
 
-      // 3. Also forward via FormSubmit directly to raxmonjonov.dev@gmail.com with custom styling
+      // 3. FormSubmit forwarder to raxmonjonov.dev@gmail.com
       fetch('https://formsubmit.co/ajax/raxmonjonov.dev@gmail.com', {
         method: 'POST',
         headers: { 
@@ -72,23 +87,24 @@ export default function App() {
           _captcha: 'false',
           Ism: formState.name,
           Email: formState.email,
-          Mavzu: formState.subject || "Full-Stack Hamkorlik",
+          Mavzu: emailSubject,
+          Til: lang.toUpperCase(),
           Xabar: formState.message,
-          Yuborilgan_vaqt: new Date().toLocaleString('uz-UZ')
+          Yuborilgan_vaqt: new Date().toLocaleString()
         })
       }).catch(() => {});
 
       setStatusMsg({
         type: 'success',
-        text: "Xabaringiz muvaffaqiyatli yetkazildi! raxmonjonov.dev@gmail.com manziliga yuborildi."
+        text: t.contact.form.successMsg
       });
-      setFormState({ name: '', email: '', subject: 'Portfolio orqali yangi mijoz / taklif', message: '' });
+      setFormState({ name: '', email: '', subject: '', message: '' });
     } catch (err) {
       setStatusMsg({
         type: 'success',
-        text: "Xabaringiz qabul qilindi! Tez orada siz bilan bog'lanaman."
+        text: t.contact.form.successMsg
       });
-      setFormState({ name: '', email: '', subject: 'Portfolio orqali yangi mijoz / taklif', message: '' });
+      setFormState({ name: '', email: '', subject: '', message: '' });
     } finally {
       setSubmitting(false);
     }
@@ -112,7 +128,7 @@ export default function App() {
         top: 0,
         zIndex: 100,
         backdropFilter: 'blur(20px)',
-        backgroundColor: 'rgba(10, 12, 16, 0.8)',
+        backgroundColor: 'rgba(10, 12, 16, 0.85)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
       }}>
         <div style={{
@@ -148,20 +164,55 @@ export default function App() {
           </a>
 
           {/* Desktop Nav Links */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }} className="desktop-nav">
-            <a href="#about" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.95rem', fontWeight: 500, transition: '0.2s' }}>Haqida</a>
-            <a href="#skills" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.95rem', fontWeight: 500, transition: '0.2s' }}>Ko'nikmalar</a>
-            <a href="#services" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.95rem', fontWeight: 500, transition: '0.2s' }}>Xizmatlar</a>
-            <a href="#projects" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.95rem', fontWeight: 500, transition: '0.2s' }}>Loyihalar</a>
-            <a href="#contact" className="btn-primary" style={{ padding: '8px 18px', fontSize: '0.9rem' }}>
-              Aloqa
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <a href="#about" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.92rem', fontWeight: 500, transition: '0.2s' }}>{t.nav.about}</a>
+              <a href="#skills" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.92rem', fontWeight: 500, transition: '0.2s' }}>{t.nav.skills}</a>
+              <a href="#services" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.92rem', fontWeight: 500, transition: '0.2s' }}>{t.nav.services}</a>
+              <a href="#projects" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.92rem', fontWeight: 500, transition: '0.2s' }}>{t.nav.projects}</a>
+            </div>
+
+            {/* Language Switcher Buttons */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              background: 'rgba(255, 255, 255, 0.05)',
+              padding: '3px',
+              borderRadius: '10px',
+              border: '1px solid var(--border-color)',
+              gap: '2px'
+            }}>
+              {['uz', 'en', 'ru'].map((item) => (
+                <button
+                  key={item}
+                  onClick={() => handleLangChange(item)}
+                  style={{
+                    border: 'none',
+                    background: lang === item ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)' : 'transparent',
+                    color: lang === item ? '#fff' : 'var(--text-muted)',
+                    padding: '4px 10px',
+                    borderRadius: '7px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+
+            <a href="#contact" className="btn-primary" style={{ padding: '8px 18px', fontSize: '0.88rem' }}>
+              {t.nav.contact}
             </a>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <header style={{
+      <header id="about" style={{
         maxWidth: '1200px',
         margin: '0 auto',
         padding: '100px 24px 80px',
@@ -171,7 +222,7 @@ export default function App() {
         <div style={{ maxWidth: '850px' }}>
           <div className="badge" style={{ marginBottom: '24px' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
-            {portfolioData.personal.status}
+            {t.hero.status}
           </div>
 
           <h1 style={{
@@ -181,12 +232,12 @@ export default function App() {
             marginBottom: '24px',
             letterSpacing: '-0.02em'
           }}>
-            Salom, men <span style={{
+            {t.hero.greeting} <span style={{
               background: 'linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
-            }}>{portfolioData.personal.name}</span>.<br />
-            {portfolioData.personal.title}.
+            }}>{t.hero.name}</span>.<br />
+            {t.hero.title}.
           </h1>
 
           <p style={{
@@ -196,15 +247,15 @@ export default function App() {
             lineHeight: 1.7,
             maxWidth: '680px'
           }}>
-            {portfolioData.personal.subtitle}. {portfolioData.personal.bio}
+            {t.hero.subtitle}. {t.hero.bio}
           </p>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
             <a href="#projects" className="btn-primary">
-              <Sparkles size={18} /> Loyihalarni ko'rish
+              <Sparkles size={18} /> {t.hero.viewProjects}
             </a>
             <a href="#contact" className="btn-secondary">
-              <Mail size={18} /> Bog'lanish
+              <Mail size={18} /> {t.hero.contactMe}
             </a>
             <a href={portfolioData.socials.github} target="_blank" rel="noreferrer" className="btn-secondary">
               <GithubIcon size={18} /> GitHub
@@ -222,19 +273,19 @@ export default function App() {
           }}>
             <div>
               <div style={{ fontSize: '2rem', fontWeight: 800, color: '#60a5fa' }}>{portfolioData.personal.experienceYears}</div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Yillik tajriba</div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{t.hero.metrics.experience}</div>
             </div>
             <div>
               <div style={{ fontSize: '2rem', fontWeight: 800, color: '#a78bfa' }}>{portfolioData.personal.projectsCount}</div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Muvaffaqiyatli loyiha</div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{t.hero.metrics.projects}</div>
             </div>
             <div>
               <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399' }}>100%</div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Qoniqish darajasi</div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{t.hero.metrics.satisfaction}</div>
             </div>
             <div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#38bdf8' }}>{portfolioData.personal.location}</div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Manzil</div>
+              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#38bdf8' }}>{t.hero.metrics.locationVal}</div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{t.hero.metrics.location}</div>
             </div>
           </div>
         </div>
@@ -243,8 +294,8 @@ export default function App() {
       {/* Services Section */}
       <section id="services" style={{ maxWidth: '1200px', margin: '0 auto', padding: '60px 24px', width: '100%' }}>
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <span className="badge" style={{ marginBottom: '12px' }}>Xizmatlar</span>
-          <h2 style={{ fontSize: '2.4rem', fontWeight: 800 }}>Nimalar taklif qila olaman?</h2>
+          <span className="badge" style={{ marginBottom: '12px' }}>{t.services.badge}</span>
+          <h2 style={{ fontSize: '2.4rem', fontWeight: 800 }}>{t.services.title}</h2>
         </div>
 
         <div style={{
@@ -252,7 +303,7 @@ export default function App() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
           gap: '24px'
         }}>
-          {portfolioData.services.map((srv, idx) => (
+          {t.services.items.map((srv, idx) => (
             <div key={idx} className="glass-panel" style={{ padding: '32px' }}>
               <div style={{
                 width: '48px',
@@ -280,8 +331,8 @@ export default function App() {
       {/* Skills Section */}
       <section id="skills" style={{ maxWidth: '1200px', margin: '0 auto', padding: '60px 24px', width: '100%' }}>
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <span className="badge" style={{ marginBottom: '12px' }}>Texnik Stack</span>
-          <h2 style={{ fontSize: '2.4rem', fontWeight: 800 }}>Ko'nikmalar va Vositalar</h2>
+          <span className="badge" style={{ marginBottom: '12px' }}>{t.skills.badge}</span>
+          <h2 style={{ fontSize: '2.4rem', fontWeight: 800 }}>{t.skills.title}</h2>
         </div>
 
         <div style={{
@@ -292,7 +343,7 @@ export default function App() {
           {/* Frontend */}
           <div className="glass-panel" style={{ padding: '32px' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Code2 size={22} color="#60a5fa" /> Frontend Texnologiyalari
+              <Code2 size={22} color="#60a5fa" /> {t.skills.frontendTitle}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {portfolioData.skills.frontend.map((item, i) => (
@@ -312,7 +363,7 @@ export default function App() {
           {/* Backend */}
           <div className="glass-panel" style={{ padding: '32px' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Server size={22} color="#a78bfa" /> Backend & Database
+              <Server size={22} color="#a78bfa" /> {t.skills.backendTitle}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {portfolioData.skills.backend.map((item, i) => (
@@ -332,7 +383,7 @@ export default function App() {
           {/* Tools & DevOps */}
           <div className="glass-panel" style={{ padding: '32px' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Cpu size={22} color="#34d399" /> DevOps & Vositalar
+              <Cpu size={22} color="#34d399" /> {t.skills.toolsTitle}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {portfolioData.skills.tools.map((item, i) => (
@@ -354,9 +405,9 @@ export default function App() {
       {/* Projects Section */}
       <section id="projects" style={{ maxWidth: '1200px', margin: '0 auto', padding: '60px 24px', width: '100%' }}>
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <span className="badge" style={{ marginBottom: '12px' }}>Portfolio</span>
-          <h2 style={{ fontSize: '2.4rem', fontWeight: 800 }}>Mening So'nggi Loyihalarim</h2>
-          <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Real muammolarni hal qiluvchi amaliy full-stack yechimlar</p>
+          <span className="badge" style={{ marginBottom: '12px' }}>{t.projects.badge}</span>
+          <h2 style={{ fontSize: '2.4rem', fontWeight: 800 }}>{t.projects.title}</h2>
+          <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>{t.projects.subtitle}</p>
         </div>
 
         <div style={{
@@ -397,7 +448,7 @@ export default function App() {
                       target="_blank" 
                       rel="noreferrer" 
                       style={{ color: 'var(--text-muted)', transition: '0.2s', padding: '6px' }}
-                      title="GitHub kodini ko'rish"
+                      title={t.projects.viewCode}
                     >
                       <GithubIcon size={18} />
                     </a>
@@ -406,7 +457,7 @@ export default function App() {
                       target="_blank" 
                       rel="noreferrer" 
                       style={{ color: '#60a5fa', transition: '0.2s', padding: '6px' }}
-                      title="Jonli ko'rish"
+                      title={t.projects.viewLive}
                     >
                       <ArrowUpRight size={20} />
                     </a>
@@ -447,7 +498,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* Contact Section with Netlify Form & Function */}
+      {/* Contact Section */}
       <section id="contact" style={{ maxWidth: '1200px', margin: '0 auto', padding: '80px 24px 100px', width: '100%' }}>
         <div className="glass-panel" style={{
           padding: 'clamp(28px, 5vw, 56px)',
@@ -457,12 +508,12 @@ export default function App() {
           alignItems: 'center'
         }}>
           <div>
-            <span className="badge" style={{ marginBottom: '16px' }}>Bog'lanish</span>
+            <span className="badge" style={{ marginBottom: '16px' }}>{t.contact.badge}</span>
             <h2 style={{ fontSize: '2.4rem', fontWeight: 800, marginBottom: '16px' }}>
-              Birgalikda ajoyib loyiha yaratamizmi?
+              {t.contact.title}
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: 1.7, marginBottom: '32px' }}>
-              Savollaringiz, takliflaringiz yoki yangi g'oyalaringiz bo'lsa, xabar qoldiring. Men tez fursatda sizga javob beraman!
+              {t.contact.subtitle}
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -493,13 +544,13 @@ export default function App() {
               
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  Ismingiz
+                  {t.contact.form.nameLabel}
                 </label>
                 <input 
                   type="text" 
                   name="name"
                   required
-                  placeholder="Ismingizni kiriting..."
+                  placeholder={t.contact.form.namePlaceholder}
                   value={formState.name}
                   onChange={(e) => setFormState({ ...formState, name: e.target.value })}
                   style={{
@@ -518,13 +569,13 @@ export default function App() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  Elektron pochtangiz
+                  {t.contact.form.emailLabel}
                 </label>
                 <input 
                   type="email" 
                   name="email"
                   required
-                  placeholder="example@gmail.com"
+                  placeholder={t.contact.form.emailPlaceholder}
                   value={formState.email}
                   onChange={(e) => setFormState({ ...formState, email: e.target.value })}
                   style={{
@@ -543,12 +594,12 @@ export default function App() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  Xabar mavzusi
+                  {t.contact.form.subjectLabel}
                 </label>
                 <input 
                   type="text" 
                   name="subject"
-                  placeholder="Loyiha buyurtmasi / Hamkorlik taklifi"
+                  placeholder={t.contact.form.subjectPlaceholder}
                   value={formState.subject}
                   onChange={(e) => setFormState({ ...formState, subject: e.target.value })}
                   style={{
@@ -567,13 +618,13 @@ export default function App() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  Xabaringiz
+                  {t.contact.form.messageLabel}
                 </label>
                 <textarea 
                   name="message"
                   rows={4}
                   required
-                  placeholder="Loyiha haqida batafsil ma'lumot yoki taklifingiz..."
+                  placeholder={t.contact.form.messagePlaceholder}
                   value={formState.message}
                   onChange={(e) => setFormState({ ...formState, message: e.target.value })}
                   style={{
@@ -614,7 +665,7 @@ export default function App() {
                 className="btn-primary" 
                 style={{ width: '100%', marginTop: '6px' }}
               >
-                {submitting ? 'Yuborilmoqda...' : <><Send size={18} /> Xabarni yuborish</>}
+                {submitting ? t.contact.form.submitting : <><Send size={18} /> {t.contact.form.submitBtn}</>}
               </button>
             </form>
           </div>
@@ -632,7 +683,7 @@ export default function App() {
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
           <div>
-            © {new Date().getFullYear()} {portfolioData.personal.name}. Barcha huquqlar himoyalangan.
+            © {new Date().getFullYear()} Dilshodbek. {t.footer.rights}
           </div>
           <div style={{ display: 'flex', gap: '20px' }}>
             <a href={portfolioData.socials.github} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>GitHub</a>
